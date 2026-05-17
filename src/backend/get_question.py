@@ -7,9 +7,9 @@ from botocore.exceptions import ClientError
 
 
 QUESTIONS_TABLE = os.environ.get("QUESTIONS_TABLE", "Questions")
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
+APP_REGION = os.environ.get("APP_REGION", "us-east-2")
 
-dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
+dynamodb = boto3.resource("dynamodb", region_name=APP_REGION)
 questions_table = dynamodb.Table(QUESTIONS_TABLE)
 
 def lambda_handler(event, context):
