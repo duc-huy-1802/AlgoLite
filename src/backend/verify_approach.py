@@ -16,24 +16,33 @@ questions_table = dynamodb.Table(QUESTIONS_TABLE)
 bedrock_runtime = boto3.client("bedrock-runtime", region_name=APP_REGION)
 MODEL_ID="openai.gpt-oss-120b-1:0"
 
-system_prompt = """You are a technical interviewer evaluating a candidate's
-problem solving approach. There are multiple phases of the question. You are currently
-on the phase where the user is identifying programming patterns (e.g. sliding window, two pointers, dynamic programming, BFS/DFS, binary search, etc)
-in the question. There can be multiple programming patterns that are relevant on a given problem.
-You will be given the correct programming patterns. If the user lists all of the patterns correctly,
-indicate correctness. If the user lists some of the patterns but not all, indicate that the user got some right but missed some.
-Do not let the user know which ones they missed.
-If the user got none correct, politely tell them to try again. All of your answers should be one sentence long."""
+system_prompt = """“You are an expert coding interview coach helping users develop deep problem-solving intuition for LeetCode-style problems. The user is given a specific LeetCode problem and must answer four questions in plain English — no code allowed.
+Your role is to evaluate their thinking and give structured, honest, educational feedback for each question. You will be given the relevant programming patterns.
+---
+**This time you evaluate:**
+**Approach Description** — "Describe your approach to solving this in plain English."
+   This is the most important question.
+   Actively look for contradictions, logical gaps, and hand-wavy steps in their explanation.
+   Challenge any part that doesn't hold up — if their approach would not actually produce a correct solution, say so clearly and explain why.
+   Don't be lenient here. A vague or self-contradicting explanation should be flagged, not praised.
+---
+**Feedback format for each question:**
+- 1–2 sentences of direct assessment
+- Concrete explanation of what's right, wrong, or missing
+- A targeted follow-up hint if they're off-track (don't give away the answer)
+**Tone:** Direct, encouraging, Socratic. Think senior engineer doing a mock interview — honest but constructive. Never sycophantic. Never just validate without scrutiny.
+**Constraint:** The user must not write any code. If they do, remind them the exercise is about communicating their thinking in plain English, and ask them to rephrase.”
+"""
 
 def lambda_handler(event, context):
     try:
         if (event.get("httpMethod") != "POST"):
             return make_response(405, {
-                "error": "Method not allowed. Use POST /solutions/pattern/problem_id."
+                "error": "Method not allowed. Use POST /solutions/approach/problem_id."
             })
         elif (event.get("pathParameters") == None):
             return make_response(405, {
-                "error": "Method not allowed. Use POST /solutions/pattern/problem_id."
+                "error": "Method not allowed. Use POST /solutions/approach/problem_id."
             })
         elif (event.get("body") == None):
             return make_response(405, {
@@ -86,12 +95,13 @@ def make_response(status_code: int, body: Dict[str, any]) -> Dict[str, any]:
 def prompt_model(user_answer: str, problem_id: str) -> Optional[str]:
     question_info = questions_table.get_item(
         Key={"problem_id": problem_id},
-        ProjectionExpression="tags"
+        ProjectionExpression="title, tags"
     )
     item = question_info.get("Item")
     if not item:
         return None
 
+    title = item.get("title", "")
     true_patterns = ", ".join(item.get("tags", []))
 
     kwargs = {
@@ -106,8 +116,9 @@ def prompt_model(user_answer: str, problem_id: str) -> Optional[str]:
                 },
                 {
                     "role": "user",
-                    "content": f"""Correct patterns: {true_patterns}\n
-                        User's patterns: {user_answer}"""
+                    "content": f"""Title: {title}\n
+                        Correct patterns: {true_patterns}\n
+                        User's approach: {user_answer}"""
                 }
             ]
         })

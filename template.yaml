@@ -38,10 +38,10 @@ Resources:
             Path: /questions/{problem_id}
             Method: get
 
-  VerifySolutionFunction:
+  VerifyPatternFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: verify_solution.lambda_handler
+      Handler: verify_pattern.lambda_handler
       Policies:
         - AmazonDynamoDBReadOnlyAccess
         - AmazonBedrockFullAccess
@@ -49,7 +49,49 @@ Resources:
         Api:
           Type: Api
           Properties:
-            Path: /solution
+            Path: /solution/pattern/{problem_id}
+            Method: post
+
+  VerifyApproachFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: verify_approach.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - AmazonBedrockFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /solution/approach/{problem_id}
+            Method: post
+
+  VerifyBigOFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: verify_bigO.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - AmazonBedrockFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /solution/bigO/{problem_id}
+            Method: post
+
+  VerifyExtraFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: verify_extra.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - AmazonBedrockFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /solution/extra/{problem_id}
             Method: post
 
   GetSolutionFunction:
