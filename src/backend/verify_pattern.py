@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any, Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
-from openai import OpenAI
+import re
 
 
 QUESTIONS_TABLE = os.environ.get("QUESTIONS_TABLE", "Questions")
@@ -13,8 +13,8 @@ APP_REGION = os.environ.get("APP_REGION", "us-east-2")
 dynamodb = boto3.resource("dynamodb", region_name=APP_REGION)
 questions_table = dynamodb.Table(QUESTIONS_TABLE)
 
-client = OpenAI()
-MODEL = "openai.gpt-oss-120b"
+bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-2")
+MODEL_ID="openai.gpt-oss-120b-1:0"
 
 system_prompt = """You are a technical interviewer evaluating a candidate's
 problem solving approach. There are multiple phases of the question. You are currently
@@ -93,17 +93,28 @@ def prompt_model(user_answer: str, problem_id: str) -> Optional[str]:
 
     true_patterns = item.get("tags", "")
 
-    response = client.responses.create(
-        model=MODEL,
-        input=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "user": f"""True patterns: {true_patterns}\n
-                    User solution: {user_answer}"""
-            }
-        ]
-    )
-    return response.output_text
+    kwargs = {
+        "modelId": "openai.gpt-oss-120b-1:0",
+        "contentType": "application/json",
+        "accept": "application/json",
+        "body": json.dumps({
+            "openai_version": "bedrock-2023-05-31",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"""Correct patterns: {true_patterns}\n
+                        User's patterns: {user_answer}"""
+                }
+            ]
+        })
+    }
+
+    response = bedrock_runtime.invoke_model(**kwargs)
+    body = json.loads(response['body'].read())
+    content = body["choices"][0]["message"]["content"]
+    clean = re.sub(r"<reasoning>.*?</reasoning>", "", content, flags=re.DOTALL).strip()
+    return clean
