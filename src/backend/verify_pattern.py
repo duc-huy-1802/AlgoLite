@@ -18,7 +18,8 @@ MODEL = "openai.gpt-oss-120b"
 
 system_prompt = """You are a technical interviewer evaluating a candidate's
 problem solving approach. There are multiple phases of the question. You are currently
-on the phase where the user is identifying programming patterns (there can be multiple) in the question.
+on the phase where the user is identifying programming patterns (e.g. sliding window, two pointers, dynamic programming, BFS/DFS, binary search, etc)
+in the question. There can be multiple programming patterns that are relevant on a given problem.
 You will be given the correct programming patterns. If the user lists all of the patterns correctly,
 indicate correctness. If the user lists some of the patterns but not all, indicate that the user got some right but missed some
 If the user got none correct, politely tell them to try again. All of your answers should be one sentence long."""
@@ -76,12 +77,12 @@ def make_response(status_code: int, body: Dict[str, any]) -> Dict[str, any]:
             # For development. For production, replace * with your Amplify domain.
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Allow-Methods": "GET,OPTIONS"
+            "Access-Control-Allow-Methods": "POST"
         },
         "body": json.dumps(body, cls=DecimalEncoder)
     }
 
-def prompt_model(user_solution: str, problem_id: str) -> Optional[str]:
+def prompt_model(user_answer: str, problem_id: str) -> Optional[str]:
     question_info = questions_table.get_item(
         Key={"problem_id": problem_id},
         ProjectionExpression="tags"
@@ -90,11 +91,7 @@ def prompt_model(user_solution: str, problem_id: str) -> Optional[str]:
     if not item:
         return None
 
-
-    title = item.get("title", "")
-    statement = item.get("statement", "")
-    true_solution = item.get("solution", "")
-    expected_steps = item.get("expected_reasoning_steps", "")
+    true_patterns = item.get("tags", "")
 
     response = client.responses.create(
         model=MODEL,
@@ -104,15 +101,9 @@ def prompt_model(user_solution: str, problem_id: str) -> Optional[str]:
                 "content": system_prompt
             },
             {
-                "user": f"""Title: {title}\n
-                    Description: {statement}\n
-                    True solution: {true_solution}\n
-                    Expected steps: {expected_steps}\n
-                    User solution: {user_solution}"""
+                "user": f"""True patterns: {true_patterns}\n
+                    User solution: {user_answer}"""
             }
         ]
     )
     return response.output_text
-
-
-[ { "S" : "Start with the brute-force idea of checking every pair." }, { "S" : "Explain that brute force takes O(n^2) time." }, { "S" : "Recognize that faster lookup can improve the solution." }, { "S" : "Use a hash set to store previously seen numbers." }, { "S" : "For each number x, check whether target - x has already appeared." }, { "S" : "Explain that the optimized solution takes O(n) time and O(n) space." } ]
