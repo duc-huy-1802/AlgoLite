@@ -6,6 +6,9 @@ import ProblemExample from  "../Problems/ProblemExample";
 import Stage1 from "../Problems/Stage1";
 import Stage3  from "../Problems/Stage3";
 import Stage4 from "../Problems/Stage4";
+import { fetchQuestion } from "../services/api";
+import Loading from "./Loading";
+import ErrorPrinting from "./ErrorPrinting";
 
 const dummyData = {
   id: 1,
@@ -63,13 +66,15 @@ const difficultyStyle = {
 export default function Problem() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const problem = dummyData;
 
   const [stage, setStage] = useState(1);
 
   const [chatResponse, setChatResponse] = useState({ correct: null, response: "" });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [problem, setProblem] = useState(null);
+  const [error, setError] = useState("");
   const [time, setTime] = useState(3);
+
 
   const currentStage = STAGES[stage - 1];
 
@@ -95,9 +100,23 @@ export default function Problem() {
       response: ""
     }))
     setTime(3)
-
   }
-
+  useEffect(() => {
+      const loadProblems = async () => {
+        try {
+          setLoading(true);
+          const data = await fetchQuestion(id);
+          setProblem(data.question)
+        } catch (err) {
+          setError(err.message);
+          console.error('Failed to load problems:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      loadProblems();
+    }, []);
   const handleStage1Submit = (userInput) => {
     setStage((s) => s + 1)
   }
@@ -106,6 +125,32 @@ export default function Problem() {
   }
   const handleStage4Submit = () => {
     setStage((s) => s + 1)
+  }
+
+  const display = () => {
+    if (loading) {
+      return <Loading/>
+    } else if (error) {
+      return <ErrorPrinting error={error}/>
+    } else if (problem) {
+      return (
+        <div className="min-h-screen bg-[#0a0f1e] text-white font-sans pb-12">
+          <ProblemTopBar />
+          <ProblemCard
+            problem={problem}
+            problemDifficultyStyle={difficultyStyle[problem.difficulty]}
+          />
+          <ProblemExample problem={problem} />
+
+          {chatResponse.response ? (
+            <ChatFeedback chatResponse={chatResponse} time={time} />
+          ) : questionDisplay()}
+
+        </div>
+      );
+    } else {
+      return <Loading/>
+    }
   }
 
   const questionDisplay = () => {
@@ -117,20 +162,5 @@ export default function Problem() {
       return (<Stage4 problem={problem} handleSubmit={handleStage4Submit} />)
     }
   }
-  return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white font-sans pb-12">
-
-      <ProblemTopBar />
-      <ProblemCard
-        problem={problem}
-        problemDifficultyStyle={difficultyStyle[problem.difficulty]}
-      />
-      <ProblemExample problem={problem} />
-
-      {chatResponse.response ? (
-        <ChatFeedback chatResponse={chatResponse} time={time} />
-      ) : questionDisplay()}
-
-    </div>
-  );
+  return display();
 }

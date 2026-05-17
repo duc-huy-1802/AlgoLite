@@ -64,7 +64,7 @@ export const fetchQuestion = async (problemId) => {
   try {
     const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/questions/${problemId}`);
     
-    if (!response.ok) {
+    if (!response.ok) { 
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
