@@ -58,7 +58,13 @@ export const fetchAllQuestions = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
+    let data = await response.json();
+    
+    // If response is wrapped in proxy format, unwrap it
+    if (data.body && typeof data.body === 'string') {
+      data = JSON.parse(data.body);
+    }
+    
     return data;
   } catch (error) {
     console.warn('API Error - Using mock data:', error.message);
@@ -70,7 +76,7 @@ export const fetchAllQuestions = async () => {
 // GET /question/{problem_id} - Fetch a specific problem
 export const fetchQuestion = async (problemId) => {
   try {
-    const response = await fetch(`${API_URL}/question/${problemId}`, {
+    const response = await fetch(`${API_URL}/questions/${problemId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +87,13 @@ export const fetchQuestion = async (problemId) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
+    let data = await response.json();
+    
+    // If response is wrapped in proxy format, unwrap it
+    if (data.body && typeof data.body === 'string') {
+      data = JSON.parse(data.body);
+    }
+    
     return data;
   } catch (error) {
     console.warn('API Error - Using mock data:', error.message);
