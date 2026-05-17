@@ -17,44 +17,41 @@ client = OpenAI()
 MODEL = "openai.gpt-oss-120b"
 
 system_prompt = """You are a technical interviewer evaluating a candidate's
-problem solving approach. You do NOT care whether they wrote perfect code —
-you care about their reasoning, pattern recognition, and communication.
-Be encouraging but honest. Keep feedback concise, structured, and at a high-level.
-If a user's solution is 'correct' but their reasoning is off, ask them further questions about their reasoning
-You will be given context about the problem (at minimum the title and a description of the problem).
-This context may include the intended solution and intended line of reasoning, but not always
-If they exist, use those to verify and evaluate the user's input. Otherwise,
-attempt to reason about the question on your own and use your results to evaluate the user"""
+problem solving approach. There are multiple phases of the question. You are currently
+on the phase where the user is identifying programming patterns (there can be multiple) in the question.
+You will be given the correct programming patterns. If the user lists all of the patterns correctly,
+indicate correctness. If the user lists some of the patterns but not all, indicate that the user got some right but missed some
+If the user got none correct, politely tell them to try again. All of your answers should be one sentence long."""
 
 def lambda_handler(event, context):
     try:
         if (event.get("httpMethod") != "POST"):
             return make_response(405, {
-                "error": "Method not allowed. Use POST /solutions/problem_id."
+                "error": "Method not allowed. Use POST /solutions/pattern/problem_id."
             })
         elif (event.get("pathParameters") == None):
             return make_response(405, {
-                "error": "Method not allowed. Use POST /solutions/problem_id."
-            })
-        elif (event.get("queryStringParameters") == None):
-            return make_response(405, {
-                "error": "Method not allowed. queryStringParameters should not be empty"
+                "error": "Method not allowed. Use POST /solutions/pattern/problem_id."
             })
         elif (event.get("body") == None):
             return make_response(405, {
-                "error": "Method not allowed. User solution should not be blank"
+                "error": "Method not allowed. User body should not be blank"
+            })
+
+        if (event.get("pathParameters")["pattern"] == None):
+            return make_response(400, {
+                "error": "Missing pattern in path"
             })
 
         problem_id = event.get("pathParameters")["problem_id"]
-        give_full_solution = event.get("queryStringParameters")["give_full_solution"]
+        user_answer = event.get("body")["user_answer"]
 
-        user_solution = event.get("body")["user_solution"]
-        if not user_solution:
+        if not user_answer:
             return make_response(405, {
                 "error": "User solution should not be blank!"
             })
 
-        model_feedback = prompt_model(user_solution, problem_id)
+        model_feedback = prompt_model(user_answer, problem_id)
         return make_response(200, {"feedback": model_feedback})
 
     except ClientError as e:
@@ -87,11 +84,12 @@ def make_response(status_code: int, body: Dict[str, any]) -> Dict[str, any]:
 def prompt_model(user_solution: str, problem_id: str) -> Optional[str]:
     question_info = questions_table.get_item(
         Key={"problem_id": problem_id},
-        ProjectionExpression="title, statement, solution, expected_reasoning_steps"
+        ProjectionExpression="tags"
     )
     item = question_info.get("Item")
     if not item:
         return None
+
 
     title = item.get("title", "")
     statement = item.get("statement", "")
