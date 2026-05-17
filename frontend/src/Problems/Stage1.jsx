@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { STAGES } from '../pages/Problem'
 
-export default function Stage1({currentStage, isLast, stage, handleSubmit}) {
+export default function Stage1({currentStage, stage, handleSubmit}) {
     const [input, setInput] = useState("");
   return (
     <div className="px-5 mt-5">
         <p className="text-[11px] uppercase tracking-widest text-white/30 mb-2">
-          Step {stage + 1} of {STAGES.length}
+          Step {stage} of {STAGES.length}
         </p>
 
         {/* progress dots */}
@@ -34,15 +34,15 @@ export default function Stage1({currentStage, isLast, stage, handleSubmit}) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={currentStage.placeholder}
-          className="w-full bg-white/[0.04] border border-white/10 focus:border-blue-500/40 rounded-2xl px-4 py-3.5 text-white text-[14px] leading-relaxed resize-none outline-none placeholder:text-white/25 transition-colors"
+          className="w-full bg-white/[0.04] border border-white/10 border-white/[0.4] rounded-2xl px-4 py-3.5 text-white text-[14px] leading-relaxed resize-none outline-none placeholder:text-white/25 transition-colors"
         />
 
         <button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(input)}
           disabled={!input.trim()}
           className="w-full mt-3 bg-blue-500 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium transition-opacity"
         >
-          {isLast ? "Finish" : "Submit answer"}
+          Submit answer
         </button>
 
         <p className="text-center text-[12px] text-white/25 mt-3">

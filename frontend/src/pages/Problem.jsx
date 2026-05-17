@@ -4,6 +4,8 @@ import ProblemTopBar from "../Problems/ProblemTopBar";
 import ProblemCard from "../Problems/ProblemCard";
 import ProblemExample from  "../Problems/ProblemExample";
 import Stage1 from "../Problems/Stage1";
+import Stage3  from "../Problems/Stage3";
+import Stage4 from "../Problems/Stage4";
 
 const dummyData = {
   id: 1,
@@ -21,31 +23,31 @@ const dummyData = {
 
 export const STAGES = [
   {
-    id: 0,
+    id: 1,
     label: "Pattern",
     prompt: "What pattern or technique does this problem remind you of?",
     placeholder: "e.g. I think this is a hash map problem because...",
   },
   {
-    id: 1,
+    id: 2,
     label: "Approach",
-    prompt: "Describe your approach to solving this — plain English or pseudocode.",
+    prompt: "Describe your approach to solving this — plain English.",
     placeholder: "e.g. I would iterate through the array and for each number...",
   },
   {
-    id: 2,
+    id: 3,
     label: "Complexity",
     prompt: "What is the time and space complexity of your approach?",
     placeholder: "e.g. Time: O(n) because... Space: O(n) because...",
   },
   {
-    id: 3,
+    id: 4,
     label: "Verify",
     prompt: "Walk through your solution with the example input. Does it produce the correct output?",
     placeholder: "e.g. Starting with nums=[2,7,11,15], target=9...",
   },
   {
-    id: 4,
+    id: 5,
     label: "Reflect",
     prompt: "Could you improve your solution further? Any edge cases to consider?",
     placeholder: "e.g. Edge cases: empty array, no valid pair, duplicate values...",
@@ -63,14 +65,13 @@ export default function Problem() {
   const navigate = useNavigate();
   const problem = dummyData;
 
-  const [stage, setStage] = useState(0);
-  const [input, setInput] = useState("");
+  const [stage, setStage] = useState(1);
+
   const [chatResponse, setChatResponse] = useState({ correct: null, response: "" });
   const [loading, setLoading] = useState(false);
   const [time, setTime] = useState(3);
 
-  const currentStage = STAGES[stage];
-  const isLast = stage === STAGES.length - 1;
+  const currentStage = STAGES[stage - 1];
 
   useEffect(() => {
     if (!chatResponse.response) return;
@@ -97,51 +98,24 @@ export default function Problem() {
 
   }
 
-  const handleStage = async (stageId, userInput) => {
-    // swap each with real API call
-    // expected return: { correct: bool, response: string }
-    switch (stageId) {
-      case 0: return null; // pattern — no evaluation, just advance
-      case 1: return null; // approach — call backend
-      case 2: return null; // complexity — call backend
-      case 3: return null; // verify — call backend
-      case 4: return null; // reflect — call backend
-      default: return null;
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!input.trim()) return;
-
-    setLoading(true);
-
-    try {
-      const response = await handleStage(stage, input);
-      if (response) {
-        setChatResponse(response);
-        setTime(5);
-      } else {
-        if (!isLast) setStage((s) => s + 1);
-      }
-    } finally {
-      setLoading(false);
-      setInput("");
-    }
-  };
+  const handleStage1Submit = (userInput) => {
+    setStage((s) => s + 1)
+  }
+  const handleStage3Submit = (timeComplexity, spaceComplexity) => {
+    setStage((s) => s + 1)
+  }
+  const handleStage4Submit = () => {
+    setStage((s) => s + 1)
+  }
 
   const questionDisplay = () => {
-    if (currentStage.id == 0) {
-      return (<Stage1
-          currentStage={currentStage}
-          isLast={isLast}
-          stage={stage}
-          input={input}
-          setInput={setInput}
-          loading={loading}
-          handleSubmit={handleSubmit}
-        />);
+    if (currentStage.id == 1 || currentStage.id == 2) { // might need to seperate stage 1 and stage 2 because we might use different prompting
+      return (<Stage1 currentStage={currentStage} stage={stage} handleSubmit={handleStage1Submit}/>);
+    } else if (currentStage.id == 3) {
+      return (<Stage3 stage={stage} handleSubmit={handleStage3Submit}/>)
+    } else if (currentStage.id == 4) {
+      return (<Stage4 problem={problem} handleSubmit={handleStage4Submit} />)
     }
-
   }
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white font-sans pb-12">
