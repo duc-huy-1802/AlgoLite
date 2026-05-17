@@ -13,7 +13,7 @@ APP_REGION = os.environ.get("APP_REGION", "us-east-2")
 dynamodb = boto3.resource("dynamodb", region_name=APP_REGION)
 questions_table = dynamodb.Table(QUESTIONS_TABLE)
 
-bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-2")
+bedrock_runtime = boto3.client("bedrock-runtime", region_name=APP_REGION)
 MODEL_ID="openai.gpt-oss-120b-1:0"
 
 system_prompt = """You are a technical interviewer evaluating a candidate's
@@ -39,13 +39,9 @@ def lambda_handler(event, context):
                 "error": "Method not allowed. User body should not be blank"
             })
 
-        if (event.get("pathParameters")["pattern"] == None):
-            return make_response(400, {
-                "error": "Missing pattern in path"
-            })
-
         problem_id = event.get("pathParameters")["problem_id"]
-        user_answer = event.get("body")["user_answer"]
+        body = json.loads(event.get("body") or "{}")
+        user_answer = body.get("user_answer")
 
         if not user_answer:
             return make_response(405, {
@@ -53,6 +49,10 @@ def lambda_handler(event, context):
             })
 
         model_feedback = prompt_model(user_answer, problem_id)
+        if (model_feedback is None):
+            return make_response(500, {
+                "error": "No response was made"
+            })
         return make_response(200, {"feedback": model_feedback})
 
     except ClientError as e:
@@ -91,14 +91,13 @@ def prompt_model(user_answer: str, problem_id: str) -> Optional[str]:
     if not item:
         return None
 
-    true_patterns = item.get("tags", "")
+    true_patterns = ", ".join(item.get("tags", []))
 
     kwargs = {
-        "modelId": "openai.gpt-oss-120b-1:0",
+        "modelId": MODEL_ID,
         "contentType": "application/json",
         "accept": "application/json",
         "body": json.dumps({
-            "openai_version": "bedrock-2023-05-31",
             "messages": [
                 {
                     "role": "system",
