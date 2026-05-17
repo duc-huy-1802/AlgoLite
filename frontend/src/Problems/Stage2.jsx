@@ -1,7 +1,6 @@
-import React, { useState } from 'react'
-import { STAGES } from '../pages/Problem'
+import { STAGES } from "../pages/Problem";
 
-export default function Stage1({currentStage, stage, handleSubmit, input, setInput, setStage}) {
+export default function Stage2({currentStage, stage, handleSubmit, input, setInput, setStage}) {
   return (
     <div className="px-5 mt-5">
         <p className="text-[11px] uppercase tracking-widest text-white/30 mb-2">
@@ -38,13 +37,13 @@ export default function Stage1({currentStage, stage, handleSubmit, input, setInp
 
         <button
           onClick={() => handleSubmit(input)}
-          disabled={input.length < 1}
+          disabled={input.length < 5}
           className="w-full mt-3 bg-blue-500 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium transition-opacity"
         >
           Submit answer
         </button>
         <button
-          onClick={() => setStage((s) => s + 3)}
+          onClick={() => setStage((s) => s + 2)}
           className="w-full mt-3 bg-lime-800 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium transition-opacity"
         >
           Skip to the Approach

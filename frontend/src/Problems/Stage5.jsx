@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import { STAGES } from '../pages/Problem'
+import { useNavigate } from 'react-router-dom';
 
-export default function Stage5({ stage, handleSubmit }) {
-  const [input, setInput] = useState("");
+export default function Stage5({stage}) {
   
   const currentStage = STAGES[stage - 1];
+  const navigate = useNavigate();
 
   return (
     <div className="px-5 mt-5">
@@ -32,20 +33,11 @@ export default function Stage5({ stage, handleSubmit }) {
         {currentStage.prompt}
       </p>
 
-      <textarea
-        rows={4}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder={currentStage.placeholder}
-        className="w-full bg-white/[0.04] border border-white/10 border-white/[0.4] rounded-2xl px-4 py-3.5 text-white text-[14px] leading-relaxed resize-none outline-none placeholder:text-white/25 transition-colors"
-      />
-
       <button
-        onClick={() => handleSubmit(input)}
-        disabled={!input.trim()}
+        onClick={() => navigate("/")}
         className="w-full mt-3 bg-blue-500 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium transition-opacity"
       >
-        Submit answer
+        Return back to Home
       </button>
 
       <p className="text-center text-[12px] text-white/25 mt-3">

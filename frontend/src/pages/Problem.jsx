@@ -9,20 +9,9 @@ import Stage4 from "../Problems/Stage4";
 import { fetchQuestion } from "../services/api";
 import Loading from "./Loading";
 import ErrorPrinting from "./ErrorPrinting";
-
-const dummyData = {
-  id: 1,
-  title: "Two Sum",
-  description:
-    "Given an array of integers, return indices of the two numbers such that they add up to a specific target.",
-  difficulty: "Easy",
-  tags: ["Array", "Hash Table"],
-  examples: {
-    input: "[2, 7, 11, 15], target = 9",
-    output: "[0, 1]",
-    explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-  },
-};
+import ChatResponse from "../Problems/ChatResponse";
+import Stage2 from "../Problems/Stage2";
+import Stage5 from "../Problems/Stage5";
 
 export const STAGES = [
   {
@@ -52,8 +41,8 @@ export const STAGES = [
   {
     id: 5,
     label: "Reflect",
-    prompt: "Could you improve your solution further? Any edge cases to consider?",
-    placeholder: "e.g. Edge cases: empty array, no valid pair, duplicate values...",
+    prompt: "Congratution to making it through the whole thing, good luck on your interview prep!!!!!!!!",
+    placeholder: "",
   },
 ];
 
@@ -73,7 +62,10 @@ export default function Problem() {
   const [loading, setLoading] = useState(true);
   const [problem, setProblem] = useState(null);
   const [error, setError] = useState("");
-  const [time, setTime] = useState(3);
+  const [time, setTime] = useState(5);
+
+  const [inputStage1, setInputStage1] = useState("");
+  const [inputStage2, setInputStage2] = useState("");
 
 
   const currentStage = STAGES[stage - 1];
@@ -82,25 +74,15 @@ export default function Problem() {
     if (!chatResponse.response) return;
     if (time === 0) {
       const prevResponse = chatResponse.correct
-      setChatResponse({ correct: null, response: "" });
-      setTime(5);
       if (prevResponse) {
         handleResetForNextStage()
-        
+      } else {
+        handleIncorrect()
       }
     }
     const timer = setTimeout(() => setTime((t) => t - 1), 1000);
     return () => clearTimeout(timer);
-  }, [time, chatResponse]);
-  const handleResetForNextStage = () => {
-    setStage(s => s + 1)
-    setInput("")
-    setChatResponse(s => ({
-      correct: null,
-      response: ""
-    }))
-    setTime(3)
-  }
+  }, [time, chatResponse.correct, chatResponse.response]);
   useEffect(() => {
       const loadProblems = async () => {
         try {
@@ -117,11 +99,114 @@ export default function Problem() {
   
       loadProblems();
     }, []);
-  const handleStage1Submit = (userInput) => {
-    setStage((s) => s + 1)
+  const handleResetForNextStage = () => {
+    setStage(s => s + 1)
+    setChatResponse(s => ({
+      correct: null,
+      response: ""
+    }))
+    setTime(5)
   }
-  const handleStage3Submit = (timeComplexity, spaceComplexity) => {
-    setStage((s) => s + 1)
+  const handleIncorrect = () => {
+    // no stage 3
+    if (stage == 1) {
+      setInputStage1((s) => s);
+    } else if (stage == 3) {
+      setInputStage2((s) => s)
+    }
+    setChatResponse(s => ({
+      correct: null,
+      response: ""
+    }))
+    setTime(5)
+  }
+  const handleStage1Submit = async (userInput) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/verify_patterns`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_answer: userInput,
+          problem_id: id
+        })
+      });
+      const data = await response.json();
+      const {feedback} = data;
+      const correct = feedback.correct;
+      const aiResponse = feedback.response;
+      setChatResponse({
+        correct: correct,
+        response: aiResponse
+      })
+    } catch (error) {
+      console.error(error)
+      setError("Theres something with our system. Please come back later")
+    } finally {
+      setLoading(false)
+    }
+  }
+  const handleStage2Submit = async (userInput) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/verifyApproach`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_answer: userInput,
+          problem_id: id
+        })
+      });
+      const data = await response.json();
+      const { feedback } = data
+      setChatResponse({
+        correct: feedback.correct,
+        response: feedback.response
+      })
+    } catch (error) {
+      console.error(error)
+      setError("Theres something with our system. Please come back later")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStage3Submit = async (lastResponse, timeComplexity, spaceComplexity) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/verify_bigO`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_answer: {
+            time_complexity: timeComplexity,
+            space_complexity: spaceComplexity,
+            approach: lastResponse
+          },
+          problem_id: id
+        })
+      });
+      const data = await response.json();
+      const {feedback} = data;
+      const time_correct = feedback.time_correct;
+      const space_correct = feedback.space_correct;
+      const aiResponse = feedback.response
+      setChatResponse({
+        correct: time_correct && space_correct,
+        response: aiResponse
+      })
+    } catch (error) {
+      console.error(error)
+      setError("Theres something with our system. Please come back later")
+    } finally {
+      setLoading(false)
+    }
   }
   const handleStage4Submit = () => {
     setStage((s) => s + 1)
@@ -143,7 +228,7 @@ export default function Problem() {
           <ProblemExample problem={problem} />
 
           {chatResponse.response ? (
-            <ChatFeedback chatResponse={chatResponse} time={time} />
+            <ChatResponse chatResponse={chatResponse} time={time} />
           ) : questionDisplay()}
 
         </div>
@@ -154,12 +239,16 @@ export default function Problem() {
   }
 
   const questionDisplay = () => {
-    if (currentStage.id == 1 || currentStage.id == 2) { // might need to seperate stage 1 and stage 2 because we might use different prompting
-      return (<Stage1 currentStage={currentStage} stage={stage} handleSubmit={handleStage1Submit}/>);
+    if (currentStage.id == 1) { // might need to seperate stage 1 and stage 2 because we might use different prompting
+      return (<Stage1 currentStage={currentStage} stage={stage} handleSubmit={handleStage1Submit} input={inputStage1} setInput={setInputStage1} setStage={setStage}/>);
+    } else if (currentStage.id == 2) {
+      return (<Stage2 currentStage={currentStage} stage={stage} handleSubmit={handleStage2Submit} input={inputStage2} setInput={setInputStage2} setStage={setStage}/>);
     } else if (currentStage.id == 3) {
-      return (<Stage3 stage={stage} handleSubmit={handleStage3Submit}/>)
+      return (<Stage3 stage={stage} handleSubmit={handleStage3Submit} lastResponse={inputStage2} setStage={setStage}/>)
     } else if (currentStage.id == 4) {
       return (<Stage4 problem={problem} handleSubmit={handleStage4Submit} />)
+    } else if (currentStage.id == 5) {
+      return <Stage5 stage={stage}/>
     }
   }
   return display();

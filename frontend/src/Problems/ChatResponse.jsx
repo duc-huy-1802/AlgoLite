@@ -24,7 +24,7 @@ export default function ChatResponse({chatResponse, time}) {
               className={`h-full rounded-full transition-all duration-1000 ease-linear ${
                 chatResponse.correct ? "bg-green-400" : "bg-red-400"
               }`}
-              style={{ width: `${(time / 3) * 100}%` }}
+              style={{ width: `${(time / 5) * 100}%` }}
             />
           </div>
         </div>

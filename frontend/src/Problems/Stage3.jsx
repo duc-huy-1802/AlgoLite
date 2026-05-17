@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { STAGES } from "../pages/Problem";
 
-export default function Stage3({ stage, handleSubmit }) {
+export default function Stage3({ stage, handleSubmit, lastResponse, setStage}) {
   const [time,  setTime]  = useState("");
   const [space, setSpace] = useState("");
   return (
@@ -58,17 +58,28 @@ export default function Stage3({ stage, handleSubmit }) {
           className="w-full bg-transparent border-b border-white/10 py-2 text-white font-mono text-[14px] outline-none placeholder:text-white/20"
         />
       </div>
+      {lastResponse && (
+        <div className="flex items-start gap-2.5 bg-blue-500/[0.07] border border-white/10 rounded-2xl px-3.5 py-3 mt-4 mb-4">
+            <p className="text-[12.5px] leading-[1.55] text-white/55">
+              Your approach was: <span className="text-white/85 font-medium">{lastResponse}</span>
+            </p>
+          </div>
+      )}
 
       <button
-        onClick={() => handleSubmit(time, space)}
+        onClick={() => handleSubmit(lastResponse, time, space)}
         disabled={!time.trim() || !space.trim()}
         className="w-full bg-blue-500 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium active:opacity-85"
       > Submit answer
       </button>
+      <button
+          onClick={() => setStage((s) => s + 1)}
+          className="w-full mt-3 bg-amber-500 disabled:opacity-40 text-white rounded-2xl py-4 text-[15px] font-medium transition-opacity"
+        >
+          Next Step
+        </button>
 
-      <p className="text-center text-[12px] text-white/25 mt-3">
-        Take your time — there's no timer
-      </p>
+
     </div>
   );
 }
