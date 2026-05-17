@@ -5,7 +5,7 @@ export default function Home() {
   const navigate = useNavigate()
 
   function handleGetStarted() {
-    const id = Math.floor(Math.random() * 10) + 1;
+    const id = Math.floor(Math.random() * 20) + 1;
     navigate(`/problems/${id}`);
   }
   

@@ -1,5 +1,4 @@
 // API Service for AWS API Gateway integration
-const API_URL = import.meta.env.VITE_API_URL || 'https://your-api-gateway-url.execute-api.region.amazonaws.com/stage';
 
 // Mock data for development when API is not available
 const mockQuestions = {
@@ -47,12 +46,7 @@ const mockProblemDetail = {
 // GET /questions - Fetch all problems
 export const fetchAllQuestions = async () => {
   try {
-    const response = await fetch(`${API_URL}/questions`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/questions`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -61,21 +55,14 @@ export const fetchAllQuestions = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.warn('API Error - Using mock data:', error.message);
-    // Return mock data when API is unavailable
-    return mockQuestions;
+    throw new Error(error);
   }
 };
 
 // GET /question/{problem_id} - Fetch a specific problem
 export const fetchQuestion = async (problemId) => {
   try {
-    const response = await fetch(`${API_URL}/question/${problemId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(`https://qdef1ddy45.execute-api.us-east-2.amazonaws.com/prod/questions/${problemId}`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
