@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    CodeUri: ./src/backend
+    Environment:
+      Variables:
+        QUESTIONS_TABLE: Questions
+        APP_REGION: us-east-2
+
+Resources:
+  GetQuestionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get_questions.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /questions
+            Method: get
+
+  GetQuestionByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get_question_by_id.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /questions/{problem_id}
+            Method: get
+
+  VerifySolutionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: verify_solution.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - AmazonBedrockFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /solution
+            Method: post
+
+  GetSolutionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get_solution.lambda_handler
+      Policies:
+        - AmazonDynamoDBReadOnlyAccess
+        - AmazonBedrockFullAccess
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /solution/{problem_id}
+            Method: get
+
+  WebScraperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: web_scraper.lambda_handler
+      Policies:
+        - AmazonDynamoDBFullAccess
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(24 hours)
