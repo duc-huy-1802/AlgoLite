@@ -1,38 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const dummyData = [
-  {
-    id: 1,
-    title: "Two Sum",
-    difficulty: "Easy",
-    category: ["Array", "Hash Table"],
-  },
-  {
-    id: 2,
-    title: "Add Two Numbers",
-    difficulty: "Medium",
-    category: ["Linked List", "Math"],
-  },
-  {
-    id: 3,
-    title: "Longest Substring Without Repeating Characters",
-    difficulty: "Medium",
-    category: ["Hash Table", "String", "Sliding Window"],
-  },
-  {
-    id: 4,
-    title: "Median of Two Sorted Arrays",
-    difficulty: "Hard",
-    category: ["Array", "Binary Search", "Divide and Conquer"],
-  },
-  {
-    id: 5,
-    title: "Longest Palindromic Substring",
-    difficulty: "Medium",
-    category: ["String", "Dynamic Programming"],
-  },
-];
+import { fetchAllQuestions } from "../services/api";
 
 const FILTERS = ["All", "Easy", "Medium", "Hard"];
 
@@ -50,11 +18,40 @@ const difficultyDot = {
 
 export default function Dashboard() {
   const [filter, setFilter] = useState("All");
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Fetch all problems when component mounts
+  useEffect(() => {
+    const loadProblems = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchAllQuestions();
+        // Map API response to match component's expected format
+        const mappedProblems = data.questions?.map(q => ({
+          id: q.problem_id,
+          title: q.title,
+          difficulty: q.difficulty,
+          category: q.tags || [],
+        })) || [];
+        setProblems(mappedProblems);
+      } catch (err) {
+        setError(err.message);
+        console.error('Failed to load problems:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProblems();
+  }, []);
+
   const filtered =
     filter === "All"
-      ? dummyData
-      : dummyData.filter((p) => p.difficulty === filter);
+      ? problems
+      : problems.filter((p) => p.difficulty === filter);
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white font-sans pb-12">
 
@@ -66,7 +63,9 @@ export default function Dashboard() {
         <h2 className="text-2xl font-bold mt-3" style={{ fontFamily: "Syne, sans-serif" }}>
           Problems
         </h2>
-        <p className="text-white/40 text-sm mt-1">{dummyData.length} problems available</p>
+        <p className="text-white/40 text-sm mt-1">
+          {loading ? "Loading..." : error ? "Failed to load problems" : `${problems.length} problems available`}
+        </p>
       </div>
 
       {/* filter chips */}
@@ -88,10 +87,15 @@ export default function Dashboard() {
 
       {/* problem list */}
       <div className="flex flex-col gap-2.5 px-5">
-        {filtered.map((problem) => (
+        {loading && <p className="text-white/40">Loading problems...</p>}
+        {error && <p className="text-red-400">Error: {error}</p>}
+        {!loading && !error && filtered.length === 0 && (
+          <p className="text-white/40">No problems found</p>
+        )}
+        {!loading && !error && filtered.map((problem) => (
           <div
             key={problem.id}
-            className="bg-white/[0.03] border border-white/[0.07] rounded-2xl px-4 py-3.5 flex items-center gap-3 active:bg-white/[0.06] transition-colors"
+            className="bg-white/[0.03] border border-white/[0.07] rounded-2xl px-4 py-3.5 flex items-center gap-3 active:bg-white/[0.06] transition-colors cursor-pointer"
             onClick={() => navigate(`/problems/${problem.id}`)}
           >
             <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base flex-shrink-0">
